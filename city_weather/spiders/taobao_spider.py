@@ -1,68 +1,48 @@
-#*_ coding:utf-8 _*_
-# https://s.taobao.com/search?q=%E5%AE%9E%E6%9C%A8%E5%BA%8A&imgfile=&commend=all&ssid=s5-e&search_type=item&sourceId=tb.index&spm=a21bo.50862.201856-taobao-item.1
-# &ie=utf8&initiative_id=tbindexz_20170712&bcoffset=4&ntoffset=4&p4ppushleft=1%2C48&sort=renqi-desc
-# https://s.taobao.com/search?q=%E5%AE%9E%E6%9C%A8%E5%BA%8A&imgfile=&commend=all&ssid=s5-e&search_type=item&sourceId=tb.index&spm=a21bo.50862.201856-taobao-item.1
-# &ie=utf8&initiative_id=tbindexz_20170712&bcoffset=4&ntoffset=4&p4ppushleft=1%2C48&sort=renqi-desc&s=44
-# https://s.taobao.com/search?q=%E5%AE%9E%E6%9C%A8%E5%BA%8A&imgfile=&commend=all&ssid=s5-e&search_type=item&sourceId=tb.index&spm=a21bo.50862.201856-taobao-item.1
-# &ie=utf8&initiative_id=tbindexz_20170712&bcoffset=4&ntoffset=4&p4ppushleft=1%2C48&sort=renqi-desc&s=88
-
-# https://s.taobao.com/search?q=%E5%AE%9E%E6%9C%A8%E5%BA%8A&imgfile=&commend=all&ssid=s5-e&search_type=item&sourceId=tb.index&spm=a21bo.50862.201856-taobao-item.1
-# &ie=utf8&initiative_id=tbindexz_20170717&sort=renqi-desc&bcoffset=4&ntoffset=4&p4ppushleft=1%2C48&s=44
-
-# https://s.taobao.com/search?q=%E5%AE%9E%E6%9C%A8%E5%BA%8A&imgfile=&commend=all&ssid=s5-e&search_type=item&sourceId=tb.index&spm=a21bo.50862.201856-taobao-item.1
-# &ie=utf8&initiative_id=tbindexz_20170717&sort=renqi-desc&bcoffset=4&ntoffset=4&p4ppushleft=1%2C48&filter=reserve_price%5B1000%2C10000%5D&s=44
-
-# https://s.taobao.com/search?q=%E5%AE%9E%E6%9C%A8%E5%BA%8A&imgfile=&commend=all&ssid=s5-e&search_type=item&sourceId=tb.index&spm=a21bo.50862.201856-taobao-item.1
-# &ie=utf8&initiative_id=tbindexz_20170717&sort=renqi-desc&bcoffset=4&ntoffset=4&p4ppushleft=1%2C48&filter=reserve_price%5B1000%2C10000%5D&s=88
-
-#有最低价格没有最高
-# https://s.taobao.com/search?q=%E5%AE%9E%E6%9C%A8%E5%BA%8A&imgfile=&commend=all&ssid=s5-e&search_type=item&sourceId=tb.index&spm=a21bo.50862.201856-taobao-item.1
-# &ie=utf8&initiative_id=tbindexz_20170717&sort=renqi-desc&bcoffset=4&ntoffset=4&p4ppushleft=1%2C48&filter=reserve_price%5B600%2C%5D&s=44
-
-#有最高价没有最低
-# https://s.taobao.com/search?q=%E5%AE%9E%E6%9C%A8%E5%BA%8A&imgfile=&commend=all&ssid=s5-e&search_type=item&sourceId=tb.index&spm=a21bo.50862.201856-taobao-item.1
-# &ie=utf8&initiative_id=tbindexz_20170717&sort=renqi-desc&bcoffset=4&ntoffset=4&p4ppushleft=1%2C48&filter=reserve_price%5B%2C56.3%5D
-
-#最高和最低都有
-# https://s.taobao.com/search?q=%E5%AE%9E%E6%9C%A8%E5%BA%8A&imgfile=&commend=all&ssid=s5-e&search_type=item&sourceId=tb.index&spm=a21bo.50862.201856-taobao-item.1
-# &ie=utf8&initiative_id=tbindexz_20170717&sort=renqi-desc&bcoffset=4&ntoffset=4&p4ppushleft=1%2C48&filter=reserve_price%5B600%2C2500%5D
-
-
-# from scrapy.spider import Spider
 from scrapy.spiders import Spider
-from scrapy import Selector
 from scrapy import Request
 from city_weather.items import TaobaoscrapyItem
-import pandas as pd
 import re
 import time
-import requests
 import urllib.request as urllib2
 import datetime
 import json
-import copy
+import requests
+# 如果有目录代码
+# df = pd.read_csv('/spiders/taoBaoCategory.csv')
 
-# 目录代码
-# df = pd.read_csv('/home/django/nange/taoBaoSpider/taoBaoScrapy/spiders/taoBaoCategory.csv')
-# df = pd.read_csv('/Users/zhuoqin/taoBaoScrapy/taoBaoScrapy/spiders/taoBaoCategory.csv')
 
-allPidData = []
+"""
+需要查找信息列表
+
+参数说明：
+
+_id: 这个搜索任务的ID,（TODO：以后在数据库生成）
+market： 1 --》 淘宝， 2 --》 天猫
+keyword: 输入搜索框的关键字
+pageNumber： 需要爬取的页数，最大100页
+min_price： 选填，搜索得到宝贝价格的最低价
+max_price: 选填，搜索得到宝贝价格的最高价
+
+"""
+
+search_parameter = [
+    {'_id':'search_job_id', 'market': '2', 'min_price':9, 'max_price':100, 'keyword': '短袖', 'pageNumber': 2}
+]
 
 class TBSpider(Spider):
-
+    """
+    淘宝搜索页面的信息爬取，结果按照人气排序
+    TODO： 可以增加其他几种排序，有综合，销量，信用
+    """
     name = 'taoBaoSpider'
     allowed_domains = ["taobao.com"]
     start_urls = ['http://taobao.com/']
 
 
     def parse(self, response):
-        currentTime = datetime.datetime.now().strftime('%Y%m%d')
-        results = [
-            {'_id':'', 'customized':'', 'state': '待开启', 'market': '', 'priceUpperLimit':400, 'priceDownLimit':9,
-             'endTime': '2018-02-02', 'keyword': '短袖', 'pageNumber': 2}
-        ]
+        current_time = datetime.datetime.now().strftime('%Y%m%d')
 
-        for data in results:
+        for data in search_parameter:
 
 
             key = str(data['keyword'])
@@ -70,34 +50,48 @@ class TBSpider(Spider):
             if ' ' in key:
                 key = ''.join(key.split())
 
-            for i in range(0,int(data['pageNumber'])): #这里不包含101
+            for i in range(0,int(data['pageNumber'])):
 
                 allPidDetailData = []
                 if i==0:
                     try:
-                        if len(str(data['priceUpperLimit'])) > 0 or len(str(data['priceDownLimit'])) > 0:
+                        if len(str(data['min_price'])) > 0 or len(str(data['max_price'])) > 0:
 
                             if str(data['market']) == '2':
-                                lastUrl = 'https://s.taobao.com/api?ajax=true&m=customized&stats_click=search_radio_all:1&bcoffset=0&js=1&sort=renqi-desc&filter_tianmao=tmall&filter=reserve_price' \
-                                          '[' + str(data['priceUpperLimit']) + ',' + str(data['priceDownLimit']) + ']&q=' + str(key) + '&s=36&initiative_id=staobaoz_' + str(
-                                    currentTime) + '&ie=utf8'
+                                lastUrl = "https://s.taobao.com/api?ajax=true&m=customized&" \
+                                          "stats_click=search_radio_all:1&bcoffset=0&js=1&sort=renqi-desc&" \
+                                          "filter_tianmao=tmall&filter=reserve_price[{min_price},{max_price}]&" \
+                                          "q={key}&s=36&initiative_id=staobaoz_{current_time}&" \
+                                          "ie=utf8".format(min_price=str(data['min_price']),
+                                                           max_price=str(data['max_price']),
+                                                           key=str(key),
+                                                           current_time=str(current_time))
                             else:
                                 # 有最高也有低
-                                lastUrl = 'https://s.taobao.com/api?ajax=true&m=customized&stats_click=search_radio_all:1&bcoffset=0&js=1&sort=renqi-desc&filter=reserve_price' \
-                                          '[' + str(data['priceUpperLimit']) + ',' + str(data['priceDownLimit']) + ']&q=' + str(key) + '&s=36&initiative_id=staobaoz_'+str(currentTime)+'&ie=utf8'
-
+                                lastUrl = 'https://s.taobao.com/api?ajax=true&m=customized&' \
+                                          'stats_click=search_radio_all:1&bcoffset=0&js=1&' \
+                                          'sort=renqi-desc&filter=reserve_price[{min_price},{max_price}]&' \
+                                          'q={key}&s=36&initiative_id=staobaoz_{current_time}&' \
+                                          'ie=utf8'.format(min_price=str(data['min_price']),
+                                                           max_price=str(data['max_price']),
+                                                           key=str(key),
+                                                           current_time=str(current_time))
                         else:
                             # 第一页最后12个产品
-                            # lastUrl = 'https://s.taobao.com/api?ajax=true&m=customized&bcoffset=0&commend=all&sort=renqi-desc&q='+str(key)+'&s=36&initiative_id=tbindexz_'+str(currentTime)+'&ie=utf8'
                             if str(data['market']) == '2':
-                                lastUrl = 'https://s.taobao.com/api?ajax=true&m=customized&bcoffset=0&js=1&sort=renqi-desc&q=' + str(key) + '&ntoffset=4&filter_tianmao=tmall&s=36&initiative_id=staobaoz_' + str(currentTime) + '&ie=utf8'
+                                lastUrl = 'https://s.taobao.com/api?ajax=true&m=customized&bcoffset=0&js=1&' \
+                                          'sort=renqi-desc&q={key}&ntoffset=4&filter_tianmao=tmall&' \
+                                          's=36&initiative_id=staobaoz_{current_time}&' \
+                                          'ie=utf8'.format(key=str(key), current_time=str(current_time))
                             else:
-                                lastUrl = 'https://s.taobao.com/api?ajax=true&m=customized&bcoffset=0&js=1&sort=renqi-desc&q='+str(key)+'&ntoffset=4&s=36&initiative_id=staobaoz_'+str(currentTime)+'&ie=utf8'
+                                lastUrl = 'https://s.taobao.com/api?ajax=true&m=customized&bcoffset=0&js=1&' \
+                                          'sort=renqi-desc&q={key}&ntoffset=4&s=36&' \
+                                          'initiative_id=staobaoz_{current_time}&' \
+                                          'ie=utf8'.format(key=str(key), current_time=str(current_time))
 
-                        req = urllib2.Request(lastUrl)
-                        res_data = urllib2.urlopen(req)
-                        res = res_data.read()
-                        babyInfo = json.loads(res)
+                        print('#########', lastUrl)
+                        req = requests.get(lastUrl)
+                        babyInfo = req.json()
                         itemList = babyInfo['API.CustomizedApi']['itemlist']['auctions']
                         for j in range(0,len(itemList)):
                             taoBaoItem = TaobaoscrapyItem()
@@ -123,7 +117,7 @@ class TBSpider(Spider):
                             taoBaoItem['price'] = itemList[j]['view_price']
 
 
-                            viewSales = str(itemList[j]['view_sales'])
+                            viewSales = str(itemList[j].get('view_sales'))
                             if u'人付款' in viewSales:
                                 # try:
                                 viewSales = viewSales.replace(u'人付款','')
@@ -131,12 +125,12 @@ class TBSpider(Spider):
                                 # except Exception as e:
                                 #     print e
                             else:
-                                taoBaoItem['payPerson'] = itemList[j]['view_sales']
+                                taoBaoItem['payPerson'] = itemList[j].get('view_sales')
 
                             taoBaoItem['shopName'] = itemList[j]['nick']
-                            taoBaoItem['categoryId'] = itemList[j]['category']
-                            taoBaoItem['isTmall'] = itemList[j]['isTmall']
-                            taoBaoItem['user_id'] = itemList[j]['user_id']
+                            taoBaoItem['categoryId'] = itemList[j].get('category')
+                            taoBaoItem['isTmall'] = itemList[j].get('shopcard').get('isTmall')
+                            taoBaoItem['user_id'] = itemList[j].get('user_id')
 
                             # 有目录编码对应表可以做这个
                             # for k in range(0,len(df)):
@@ -162,52 +156,87 @@ class TBSpider(Spider):
                             taoBaoItem['record_date'] = time.strftime('%Y-%m-%d', time.localtime(time.time()))
 
                             yield taoBaoItem
-                            # allPidData.append(allPidDetailData)
                     except Exception as e:
-                        print('--------------%s'%e)
+                        print('HERE --------------%s'%e)
 
 
                 # 有上限和下限价格的URL
-                if len(str(data['priceUpperLimit']))>0 and len(str(data['priceDownLimit']))>0:
+                if len(str(data['min_price']))>0 and len(str(data['max_price']))>0:
                     if str(data['market']) == '2':
-                        url = 'https://s.taobao.com/search?q='+str(key)+'&imgfile=&ie=utf8&initiative_id=tbindexz_'+str(currentTime)+'&fs=1&filter_tianmao=tmall&sort=renqi-desc' \
-                              '&bcoffset=0&filter=reserve_price%5B'+str(data['priceUpperLimit'])+'%2C'+str(data['priceDownLimit'])+'%5D&s='+str(44*i)
+                        url = 'https://s.taobao.com/search?q={key}&imgfile=&ie=utf8&' \
+                              'initiative_id=tbindexz_{current_time}&fs=1&filter_tianmao=tmall&sort=renqi-desc' \
+                              '&bcoffset=0&filter=reserve_price%5B{min_price}%2C{max_price}%5D&' \
+                              's={number}'.format(min_price=str(data['min_price']),
+                                                  max_price=str(data['max_price']),
+                                                  key=str(key),
+                                                  current_time=str(current_time),
+                                                  number=str(44*i))
                     else:
-                        url = 'https://s.taobao.com/search?q='+str(key)+'&imgfile=&js=1&stats_click=search_radio_all%3A1&initiative_id=staobaoz_'+str(currentTime)+'&ie=utf8' \
-                              '&sort=renqi-desc&filter=reserve_price%5B'+str(data['priceUpperLimit'])+'%2C'+str(data['priceDownLimit'])+'%5D&bcoffset=4&ntoffset=4&p4ppushleft=2%2C48&s='+str(44*i)
+                        url = 'https://s.taobao.com/search?q={key}&imgfile=&js=1&' \
+                              'stats_click=search_radio_all%3A1&initiative_id=staobaoz_{current_time}&ie=utf8' \
+                              '&sort=renqi-desc&filter=reserve_price%5B{min_price}%2C{max_price}%5D&' \
+                              'bcoffset=4&ntoffset=4&p4ppushleft=2%2C48&' \
+                              's={number}'.format(min_price=str(data['min_price']),
+                                                  max_price=str(data['max_price']),
+                                                  key=str(key),
+                                                  current_time=str(current_time),
+                                                  number=str(44*i))
 
-                elif len(str(data['priceUpperLimit']))>0 and len(str(data['priceDownLimit']))==0:
+                elif len(str(data['min_price']))>0 and len(str(data['max_price']))==0:
                     if str(data['market']) == '2':
-                        url = 'https://s.taobao.com/search?q='+str(key)+'&imgfile=&ie=utf8&initiative_id=tbindexz_'+str(currentTime)+'&fs=1&filter_tianmao=tmall&sort=renqi-desc&' \
-                              'bcoffset=0&filter=reserve_price%5B'+str(data['priceDownLimit'])+'%2C%5D&s='+str(44*i)
+                        url = 'https://s.taobao.com/search?q={key}&imgfile=&ie=utf8&' \
+                              'initiative_id=tbindexz_{current_time}&fs=1&filter_tianmao=tmall&sort=renqi-desc&' \
+                              'bcoffset=0&filter=reserve_price%5B{max_price}%2C%5D&' \
+                              's={number}'.format(min_price=str(data['min_price']),
+                                                  max_price=str(data['max_price']),
+                                                  key=str(key),
+                                                  current_time=str(current_time),
+                                                  number=str(44*i))
                     else:
                         # 只有最低，没有最高
-                        url = 'https://s.taobao.com/search?q='+str(key)+'&imgfile=&js=1&stats_click=search_radio_all%3A1&initiative_id=staobaoz_'+str(currentTime)+'&ie=utf8' \
-                              '&sort=renqi-desc&filter=reserve_price%5B'+str(data['priceUpperLimit'])+'%2C%5D&bcoffset=4&ntoffset=4&p4ppushleft=2%2C48&s='+str(44*i)
+                        url = 'https://s.taobao.com/search?q={key}&imgfile=&js=1&' \
+                              'stats_click=search_radio_all%3A1&initiative_id=staobaoz_{current_time}&ie=utf8' \
+                              '&sort=renqi-desc&filter=reserve_price%5B{min_price}%2C%5D&' \
+                              'bcoffset=4&ntoffset=4&p4ppushleft=2%2C48&' \
+                              's={number}'.format(min_price=str(data['min_price']),
+                                                  key=str(key),
+                                                  current_time=str(current_time),
+                                                  number=str(44*i))
 
-                elif len(str(data['priceUpperLimit'])) ==0 and len(str(data['priceDownLimit']))>0:
+                elif len(str(data['min_price'])) ==0 and len(str(data['max_price']))>0:
                     # 只有最高，没有最低
                     if str(data['market']) == '2':
-                        url = 'https://s.taobao.com/search?q='+str(key)+'&imgfile=&ie=utf8&initiative_id=tbindexz_'+str(currentTime)+'&fs=1&filter_tianmao=tmall&sort=renqi-desc&bcoffset=0&' \
-                              'filter=reserve_price%5B%2C'+str(data['priceDownLimit'])+'%5D&s='+str(44*i)
+                        url = 'https://s.taobao.com/search?q={key}&imgfile=&ie=utf8&' \
+                              'initiative_id=tbindexz_{current_time}&fs=1&filter_tianmao=tmall&' \
+                              'sort=renqi-desc&bcoffset=0&filter=reserve_price%5B%2C{max_price}%5D&' \
+                              's={number}'.format(max_price=str(data['max_price']),
+                                                  key=str(key),
+                                                  current_time=str(current_time),
+                                                  number=str(44*i))
                     else:
-                        url = 'https://s.taobao.com/search?q='+str(key)+'&imgfile=&js=1&stats_click=search_radio_all%3A1&initiative_id=staobaoz_'+str(currentTime)+'&ie=utf8' \
-                              '&sort=renqi-desc&filter=reserve_price%5B%2C'+str(data['priceDownLimit'])+'%5D&bcoffset=4&ntoffset=4&p4ppushleft=2%2C48&s='+str(44*i)
+                        url = 'https://s.taobao.com/search?q={key}&imgfile=&js=1&' \
+                              'stats_click=search_radio_all%3A1&initiative_id=staobaoz_{current_time}&ie=utf8' \
+                              '&sort=renqi-desc&filter=reserve_price%5B%2C{max_price}%5D&bcoffset=4&ntoffset=4&' \
+                              'p4ppushleft=2%2C48&s={number}'.format(max_price=str(data['max_price']),
+                                                                     key=str(key),
+                                                                     current_time=str(current_time),
+                                                                     number=str(44*i))
 
                 else:
                     # 没有最高也没有最低
                     if str(data['market']) == '2':
-                        url = 'https://s.taobao.com/search?q='+\
-                              str(key)+'&imgfile=&ie=utf8&initiative_id=tbindexz_'+\
-                              str(currentTime)+'&fs=1&filter_tianmao=tmall&sort=renqi-desc&bcoffset=0&s='+str(44*i)
+                        url = 'https://s.taobao.com/search?q={key}&imgfile=&ie=utf8&' \
+                              'initiative_id=tbindexz_{current_time}&fs=1&filter_tianmao=tmall&sort=renqi-desc&' \
+                              'bcoffset=0&s={number}'.format(key=str(key),
+                                                             current_time=str(current_time),
+                                                             number=str(44*i))
 
                     else:
-                        url = 'https://s.taobao.com/search?q='+\
-                              str(key)+'&imgfile=&js=1&stats_click=search_radio_all%3A1&initiative_id=staobaoz_'+\
-                              str(currentTime)+'&ie=utf8&sort=renqi-desc&bcoffset=4' \
-                              '&ntoffset=4&p4ppushleft=2%2C48&s='+str(44*i)
-
-
+                        url = 'https://s.taobao.com/search?q={key}&imgfile=&js=1&stats_click=search_radio_all%3A1&' \
+                              'initiative_id=staobaoz_{current_time}&ie=utf8&sort=renqi-desc&bcoffset=4&ntoffset=4&' \
+                              'p4ppushleft=2%2C48&s={number}'.format(key=str(key),
+                                                                     current_time=str(current_time),
+                                                                     number=str(44*i))
                 yield Request(
                     url=url,
                     callback=self.page2,
@@ -227,14 +256,11 @@ class TBSpider(Spider):
         pataddress = '"item_loc":"(.*?)"'
         patShopName = '"nick":"(.*?)"'
         category = '"category":"(.*?)"'
-        isTmall = '"isTmall":(.*?)'
+        isTmall = '"isTmall":(.*?),'
         user_id = '"user_id":"(.*?)"'
 
         detailURL = '"detail_url":"(.*?)"'
 
-
-
-        #
         allPic = re.compile(patPic).findall(body) #图片集合
         allid = re.compile(patid).findall(body)  # 商品Id集合
         allprice = re.compile(patprice).findall(body)  # 商品价格集合
@@ -246,8 +272,6 @@ class TBSpider(Spider):
         allIsTmall = re.compile(isTmall).findall(body)
         allUserId = re.compile(user_id).findall(body)
         allDetailURL = re.compile(detailURL).findall(body)
-
-        allPidData.append(allid)
 
         for j in range(0,len(allid)):
             taoBaoItem = TaobaoscrapyItem()
