@@ -16,11 +16,10 @@ NEWSPIDER_MODULE = 'city_weather.spiders'
 
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
-#USER_AGENT = 'city_weather (+http://www.yourdomain.com)'
+# USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.143 Safari/537.36'
 
 # Obey robots.txt rules
-ROBOTSTXT_OBEY = True
-
+ROBOTSTXT_OBEY = False
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
 #CONCURRENT_REQUESTS = 32
 
@@ -64,13 +63,13 @@ ROBOTSTXT_OBEY = True
 
 # Configure item pipelines
 # See https://doc.scrapy.org/en/latest/topics/item-pipeline.html
-ITEM_PIPELINES = {
+#ITEM_PIPELINES = {
     #'city_weather.pipelines.CityWeatherPipeline': 100,
     # 'city_weather.pipelines.CountDropPipline': 100,
     # 'city_weather.pipelines.DuplicatesPipeline': 200,
-    'city_weather.pipelines.DataBasePipeline': 300,
-}
-
+    #'city_weather.pipelines.DataBasePipeline': 300,
+#}
+COOKIES_ENABLED = False
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://doc.scrapy.org/en/latest/topics/autothrottle.html
 #AUTOTHROTTLE_ENABLED = True
